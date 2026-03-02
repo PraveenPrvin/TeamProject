@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login | TenexAI - Gov Intelligence</title>
+    
+    <!-- Fonts: Inter for clean, enterprise SaaS look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* -----------------------------------------------------------
+           1. CSS VARIABLES & THEME
+           ----------------------------------------------------------- */
+        :root {
+            /* Light Theme (Default) */
+            --bg-body: #ffffff;
+            --bg-surface: #f9fafb;
+            --bg-input: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --border-hover: #111827;
+            --primary: #111827;
+            --primary-text: #ffffff;
+            --primary-hover: #000000;
+            --error: #ef4444;
+            --success: #10b981;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --transition-speed: 0.3s;
+            --font-family: 'Inter', sans-serif;
+            --ripple-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Dark Theme Overrides */
+        body.dark-mode {
+            --bg-body: #000000;
+            --bg-surface: #111111;
+            --bg-input: #1a1a1a;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --border-color: #333333;
+            --border-hover: #ffffff;
+            --primary: #ffffff;
+            --primary-text: #000000;
+            --primary-hover: #e5e5e5;
+            --shadow-sm: 0 1px 2px 0 rgba(255, 255, 255, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(255, 255, 255, 0.1);
+            --ripple-color: rgba(0, 0, 0, 0.2);
+        }
+
+        /* -----------------------------------------------------------
+           2. GLOBAL RESET & TYPOGRAPHY
+           ----------------------------------------------------------- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Prevent scrolling on desktop */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* Typography Scale */
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        /* -----------------------------------------------------------
+           3. LAYOUT STRUCTURE (SPLIT SCREEN)
+           ----------------------------------------------------------- */
+        .auth-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr; /* Mobile: Stacked */
+            background-color: var(--bg-body);
+        }
+
+        /* Left Panel: Branding */
+        .brand-panel {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+            z-index: 1;
+        }
+
+        /* Animated Background Element */
+        .brand-bg-anim {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(100,100,100,0.1) 0%, rgba(0,0,0,0) 60%);
+            animation: drift 10s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes drift {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            background-color: var(--text-main);
+            color: var(--bg-body);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        /* Right Panel: Forms */
+        .form-panel {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto; /* Allow scroll on small mobile if height is small */
+        }
+
+        /* Desktop Layout Breakpoint */
+        @media (min-width: 769px) {
+            body {
+                overflow: hidden;
+            }
+            
+            .auth-container {
+                grid-template-columns: 1fr 1fr; /* Split screen */
+                max-width: 1400px;
+                max-height: 900px;
+                height: 90vh;
+                border-radius: 16px;
+                box-shadow: var(--shadow-lg);
+                border: 1px solid var(--border-color);
+                overflow: hidden;
+            }
+
+            .brand-panel {
+                border-bottom: none;
+                border-right: 1px solid var(--border-color);
+                padding: 4rem;
+            }
+
+            .form-panel {
+                padding: 4rem;
+                overflow-y: visible;
+            }
+        }
+
+        /* -----------------------------------------------------------
+           4. THEME TOGGLE
+           ----------------------------------------------------------- */
+        .theme-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-surface);
+            border-color: var(--border-hover);
+        }
+
+        /* -----------------------------------------------------------
+           5. FORM STYLES & ANIMATIONS
+           ----------------------------------------------------------- */
+        .forms-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            overflow: hidden; /* Hide sliding forms */
+        }
+
+        .form-slide {
+            transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.5s ease;
+            width: 100%;
+        }
+
+        /* State: Showing Login */
+        .show-login .form-login {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        .show-login .form-register {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* State: Showing Register */
+        .show-register .form-login {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .show-register .form-register {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Input Groups */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 1rem 1rem 1rem 0; /* Top Right Bottom Left */
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: var(--font-family);
+            transition: border-color 0.2s;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .input-field:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        /* Floating Label */
+        .input-label {
+            position: absolute;
+            top: 1rem;
+            left: 0;
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: 0.2s ease all;
+            transform-origin: left top;
+        }
+
+        /* Label Float Logic */
+        .input-field:focus ~ .input-label,
+        .input-field:not(:placeholder-shown) ~ .input-label {
+            transform: translateY(-0.75rem) scale(0.75);
+            color: var(--text-main);
+        }
+
+        /* Password Toggle Icon */
+        .password-toggle {
+            position: absolute;
+            right: 0;
+            top: 1rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-main);
+        }
+
+        /* Validation Feedback */
+        .validation-msg {
+            font-size: 0.75rem;
+            color: var(--error);
+            margin-top: 0.25rem;
+            height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+        
+        .input-group.error .input-field {
+            border-bottom-color: var(--error);
+        }
+        .input-group.error .validation-msg {
+            height: auto;
+            opacity: 1;
+        }
+
+        /* Checkbox & Forgot Password */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .checkbox-group input {
+            accent-color: var(--text-main);
+            width: 16px;
+            height: 16px;
+        }
+
+        .link-text {
+            color: var(--text-main);
+            font-weight: 500;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .link-text:hover {
+            color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            min-height: 44px;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary);
+            color: var(--primary-text);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden; /* For ripple */
+            transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 15px rgba(128, 128, 128, 0.4); /* Subtle glow */
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            background-color: var(--ripple-color);
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Form Switcher Link */
+        .form-switch {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .form-switch span {
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.25rem;
+        }
+        .form-switch span:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-text);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notification */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+
+    </style>
+</head>
+<body class="show-login">
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">
+        <!-- Sun Icon (for Dark Mode) -->
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <!-- Moon Icon (for Light Mode) -->
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+
+    <main class="auth-container">
+        
+        <!-- Left: Branding -->
+        <section class="brand-panel">
+            <div class="brand-bg-anim"></div>
+            <div class="brand-content">
+                <div class="logo">
+                    <span>TX</span> TenexAI
+                </div>
+                <h1>Government Intelligence,<br>Simplified.</h1>
+                <p style="max-width: 300px; margin-top: 1rem;">
+                    Streamline your tender process with AI-driven document analysis. 
+                    Built for contractors, MSMEs, and modern CA offices.
+                </p>
+            </div>
+        </section>
+
+        <!-- Right: Auth Forms -->
+        <section class="form-panel">
+            <div class="forms-wrapper" id="formsWrapper">
+                
+                <!-- LOGIN FORM -->
+                <form class="form-slide form-login" id="loginForm" novalidate>
+                    <h2>Welcome back</h2>
+                    <p>Enter your credentials to access the dashboard.</p>
+                    
+                    <div style="height: 2rem;"></div> <!-- Spacer -->
+
+                    <!-- Email -->
+                    <div class="input-group">
+                        <input type="email" id="loginEmail" class="input-field" placeholder=" " required>
+                        <label for="loginEmail" class="input-label">Email Address</label>
+                        <div class="validation-msg">Please enter a valid email address.</div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                        <input type="password" id="loginPassword" class="input-field" placeholder=" " required>
+                        <label for="loginPassword" class="input-label">Password</label>
+                        <span class="password-toggle" onclick="togglePassword('loginPassword', this)">Show</span>
+                        <div class="validation-msg">Password is required.</div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="rememberMe">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="link-text">Forgot Password?</a>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <!-- Switch -->
+                    <div class="form-switch">
+                        Don't have an account? <span onclick="switchForm('register')">Create Account</span>
+                    </div>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form class="form-slide form-register" id="registerForm" novalidate>
+                    <h2>Create Account</h2>
+                    <p>Start analyzing government tenders today.</p>
+                    
+                    <div style="height: 2rem;"></div>
+
+                    <!-- Full Name -->
+                    <div class="input-group">
+                        <input type="text" id="regName" class="input-field" placeholder=" " required>
+                        <label for="regName" class="input-label">Full Name</label>
+                        <div class="validation-msg">Name is required.</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="input-group">
+                        <input type="email" id="regEmail" class="input-field" placeholder=" " required>
+                        <label for="regEmail" class="input-label">Work Email</label>
+                        <div class="validation-msg">Please enter a valid email.</div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                        <input type="password" id="regPassword" class="input-field" placeholder=" " required>
+                        <label for="regPassword" class="input-label">Password</label>
+                        <span class="password-toggle" onclick="togglePassword('regPassword', this)">Show</span>
+                        <div class="validation-msg">Min. 8 characters required.</div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="input-group">
+                        <input type="password" id="regConfirmPassword" class="input-field" placeholder=" " required>
+                        <label for="regConfirmPassword" class="input-label">Confirm Password</label>
+                        <div class="validation-msg">Passwords do not match.</div>
+                    </div>
+
+                    <!-- Terms -->
+                    <div class="input-group" style="margin-bottom: 1rem;">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="regTerms">
+                            <span>I agree to the Terms of Service & Privacy Policy</span>
+                        </label>
+                        <div class="validation-msg" style="margin-top:0.25rem">You must agree to continue.</div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn" id="regBtn">
+                        <span class="btn-text">Create Account</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <!-- Switch -->
+                    <div class="form-switch">
+                        Already have an account? <span onclick="switchForm('login')">Sign In</span>
+                    </div>
+                </form>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        /* -----------------------------------------------------------
+           1. THEME MANAGEMENT
+           ----------------------------------------------------------- */
+        const body = document.body;
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        
+        // Check local storage or system preference
+        const savedTheme = localStorage.getItem('tenderAI-theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            enableDarkMode();
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (body.classList.contains('dark-mode')) {
+                disableDarkMode();
+            } else {
+                enableDarkMode();
+            }
+        });
+
+        function enableDarkMode() {
+            body.classList.add('dark-mode');
+            localStorage.setItem('tenderAI-theme', 'dark');
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+        }
+
+        function disableDarkMode() {
+            body.classList.remove('dark-mode');
+            localStorage.setItem('tenderAI-theme', 'light');
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        }
+
+        /* -----------------------------------------------------------
+           2. FORM SWITCHING ANIMATION
+           ----------------------------------------------------------- */
+        function switchForm(target) {
+            if (target === 'register') {
+                body.classList.remove('show-login');
+                body.classList.add('show-register');
+            } else {
+                body.classList.remove('show-register');
+                body.classList.add('show-login');
+            }
+            // Clear validation states when switching
+            document.querySelectorAll('.input-group').forEach(grp => grp.classList.remove('error'));
+        }
+
+        /* -----------------------------------------------------------
+           3. PASSWORD VISIBILITY TOGGLE
+           ----------------------------------------------------------- */
+        function togglePassword(inputId, toggleEl) {
+            const input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                toggleEl.textContent = "Hide";
+            } else {
+                input.type = "password";
+                toggleEl.textContent = "Show";
+            }
+        }
+
+        /* -----------------------------------------------------------
+           4. RIPPLE EFFECT ON BUTTONS
+           ----------------------------------------------------------- */
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if(this.disabled) return;
+                
+                const circle = document.createElement('span');
+                const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+                const radius = diameter / 2;
+
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${e.clientX - btn.getBoundingClientRect().left - radius}px`;
+                circle.style.top = `${e.clientY - btn.getBoundingClientRect().top - radius}px`;
+                circle.classList.add('ripple');
+
+                const ripple = btn.getElementsByClassName('ripple')[0];
+                if (ripple) {
+                    ripple.remove();
+                }
+
+                btn.appendChild(circle);
+            });
+        });
+
+        /* -----------------------------------------------------------
+           5. VALIDATION & SUBMIT LOGIC
+           ----------------------------------------------------------- */
+        
+        // Utility: Validate Email Regex
+        const isValidEmail = (email) => {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        };
+
+        // Utility: Show Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            // Icon based on type
+            const icon = type === 'success' ? '✓' : '⚠';
+            
+            toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Login Handling ---
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let isValid = true;
+
+            const email = document.getElementById('loginEmail');
+            const pass = document.getElementById('loginPassword');
+
+            // Email Validation
+            if (!isValidEmail(email.value)) {
+                email.parentElement.classList.add('error');
+                isValid = false;
+            } else {
+                email.parentElement.classList.remove('error');
+            }
+
+            // Password Validation
+            if (pass.value.length < 1) {
+                pass.parentElement.classList.add('error');
+                isValid = false;
+            } else {
+                pass.parentElement.classList.remove('error');
+            }
+
+            if (isValid) {
+                setLoading(loginBtn, true);
+                // Simulate API Call
+                fetch("http://127.0.0.1:8000/login", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        email: email.value,
+        password: pass.value
+    })
+})
+.then(res => res.json())
+.then(data => {
+    setLoading(loginBtn, false);
+    if(data.access_token){
+        localStorage.setItem("token", data.access_token);
+        showToast("Login successful!", "success");
+        window.location.href = "tender.html";
+    } else {
+        showToast(data.detail, "error");
+    }
+})
+.catch(() => {
+    setLoading(loginBtn, false);
+    showToast("Server error", "error");
+});
+            }
+        });
+
+        // --- Register Handling ---
+           if (isValid) {
+    setLoading(regBtn, true);
+
+    fetch("http://127.0.0.1:8000/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: name.value,
+            email: email.value,
+            password: pass.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        setLoading(regBtn, false);
+
+        if (data.message) {
+            showToast("Account created successfully!", "success");
+            registerForm.reset();
+            setTimeout(() => switchForm('login'), 1500);
+        } else {
+            showToast(data.detail || "Registration failed", "error");
+        }
+    })
+    .catch(() => {
+        setLoading(regBtn, false);
+        showToast("Server error", "error");
+    });
+}
+
+        // Clear errors on input
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function() {
+                if(this.type === 'checkbox') {
+                     this.parentElement.parentElement.classList.remove('error');
+                } else {
+                    this.parentElement.classList.remove('error');
+                }
+            });
+        });
+
+        function setLoading(btn, isLoading) {
+            const text = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner');
+            if (isLoading) {
+                btn.disabled = true;
+                text.style.display = 'none';
+                spinner.style.display = 'block';
+            } else {
+                btn.disabled = false;
+                text.style.display = 'block';
+                spinner.style.display = 'none';
+            }
+        }
+
+    </script>
+</body>
+</html>

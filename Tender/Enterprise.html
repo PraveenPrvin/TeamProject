@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TenderAI | Enterprise Dashboard</title>
+    <style>
+        /* ----------------------------------------------------------------
+           1. CSS VARIABLES & THEME SYSTEM
+        ---------------------------------------------------------------- */
+        :root {
+            /* Light Mode (Default) */
+            --bg-body: #F9FAFB;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #FFFFFF;
+            --bg-overlay: rgba(0, 0, 0, 0.5);
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --text-tertiary: #9CA3AF;
+            --border-color: #E5E7EB;
+            --border-hover: #000000;
+            --accent-color: #000000;
+            --accent-text: #FFFFFF;
+            --danger: #DC2626;
+            --success: #059669;
+            
+            /* Shadows & Effects */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-premium: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            
+            /* Dimensions */
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            
+            /* Transitions */
+            --trans-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --trans-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Font */
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            --bg-body: #050505;
+            --bg-surface: #0A0A0A;
+            --bg-sidebar: #050505;
+            --bg-overlay: rgba(255, 255, 255, 0.1);
+            --text-primary: #FFFFFF;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #52525B;
+            --border-color: #27272A;
+            --border-hover: #FFFFFF;
+            --accent-color: #FFFFFF;
+            --accent-text: #000000;
+            --glass-bg: rgba(5, 5, 5, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            
+            /* Glow Effects for Dark Mode */
+            --shadow-md: 0 4px 20px -2px rgba(255, 255, 255, 0.05);
+            --shadow-premium: 0 25px 50px -12px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Reset & Base */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color var(--trans-smooth), color var(--trans-smooth);
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; font-family: inherit; }
+        input { font-family: inherit; }
+
+        /* ----------------------------------------------------------------
+           2. LAYOUT GRID
+        ---------------------------------------------------------------- */
+        .app-container {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr 320px;
+            grid-template-rows: var(--header-height) 1fr;
+            height: 100vh;
+            transition: grid-template-columns var(--trans-smooth);
+        }
+
+        /* ----------------------------------------------------------------
+           3. SIDEBAR
+        ---------------------------------------------------------------- */
+        .sidebar {
+            grid-row: 1 / -1;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            position: relative;
+            z-index: 50;
+            transition: width var(--trans-smooth);
+            overflow: hidden;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+            height: 40px;
+        }
+
+        .logo-mark {
+            width: 32px; height: 32px;
+            background: var(--accent-color);
+            color: var(--accent-text);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; flex-shrink: 0;
+            font-size: 1.2rem;
+        }
+
+        .logo-text {
+            font-weight: 700; font-size: 1.2rem; letter-spacing: -0.03em;
+            white-space: nowrap; overflow: hidden;
+        }
+
+        .nav-scroll {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            padding-right: 4px;
+        }
+
+        .nav-group-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-tertiary); margin: 1.5rem 0 0.5rem 0.75rem;
+            font-weight: 600; white-space: nowrap;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.9rem; font-weight: 500;
+            margin-bottom: 2px;
+            cursor: pointer;
+            position: relative; overflow: hidden;
+            transition: all var(--trans-fast);
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background-color: var(--accent-color);
+            color: var(--accent-text);
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; stroke-width: 2; }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0); animation: ripple-anim 0.6s linear;
+            pointer-events: none;
+        }
+        .dark-mode .nav-item .ripple { background: rgba(0,0,0,0.2); }
+
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        /* ----------------------------------------------------------------
+           4. TOP NAVBAR
+        ---------------------------------------------------------------- */
+        .top-navbar {
+            grid-column: 2 / -1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 40;
+        }
+
+        .nav-left, .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+        .hamburger { display: none; background: none; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; }
+        
+        .search-wrapper {
+            position: relative; width: 300px;
+        }
+        
+        .search-input {
+            width: 100%; padding: 10px 10px 10px 40px;
+            background: var(--bg-body); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); color: var(--text-primary);
+            transition: all var(--trans-fast);
+        }
+        .search-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-tertiary); }
+
+        .badge-pro {
+            background: var(--text-primary); color: var(--bg-surface);
+            font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+            letter-spacing: 0.05em; animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(0,0,0,0.2); } 70% { box-shadow: 0 0 0 6px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-secondary); transition: var(--trans-fast);
+            position: relative;
+        }
+        .icon-btn:hover { background: var(--bg-body); color: var(--text-primary); }
+        
+        .notification-dot {
+            position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
+            background: var(--danger); border-radius: 50%; border: 2px solid var(--bg-surface);
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+
+        /* Dropdowns */
+        .dropdown-menu {
+            position: absolute; top: 120%; right: 0;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+            width: 200px; opacity: 0; transform: translateY(-10px);
+            pointer-events: none; transition: all var(--trans-fast);
+            overflow: hidden; z-index: 60;
+        }
+        .dropdown-menu.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+        .dropdown-item { padding: 12px 16px; display: block; font-size: 0.9rem; color: var(--text-secondary); transition: 0.2s; }
+        .dropdown-item:hover { background: var(--bg-body); color: var(--text-primary); }
+
+        /* ----------------------------------------------------------------
+           5. MAIN CONTENT
+        ---------------------------------------------------------------- */
+        .main-content {
+            grid-column: 2 / 3;
+            padding: 2rem; overflow-y: auto;
+            position: relative;
+        }
+
+        .page-header { margin-bottom: 2rem; animation: fadeIn 0.6s ease-out; }
+        .page-title { font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+        .page-sub { color: var(--text-secondary); font-size: 1rem; max-width: 600px; line-height: 1.6; }
+
+        /* Upload Section */
+        .upload-section {
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 2.5rem;
+            text-align: center; position: relative;
+            animation: slideUp 0.6s ease-out 0.1s backwards;
+            box-shadow: var(--shadow-md);
+            transition: all var(--trans-smooth);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color); border-radius: var(--radius-md);
+            padding: 3rem 1rem; cursor: pointer;
+            transition: all var(--trans-fast); position: relative; overflow: hidden;
+            background: rgba(0,0,0,0.01);
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .dark-mode .drop-zone { background: rgba(255,255,255,0.02); background-image: radial-gradient(var(--border-color) 1px, transparent 1px); }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--text-primary); transform: scale(1.01);
+            background: rgba(0,0,0,0.03);
+        }
+        .dark-mode .drop-zone:hover { background: rgba(255,255,255,0.05); }
+
+        .drop-icon { width: 48px; height: 48px; color: var(--text-primary); margin-bottom: 1rem; transition: transform 0.3s; }
+        .drop-zone:hover .drop-icon { transform: translateY(-5px); }
+
+        .upload-btn-input { display: none; }
+
+        /* File Preview & Progress */
+        .file-card {
+            display: none; margin-top: 1.5rem; text-align: left;
+            border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            padding: 1.5rem; background: var(--bg-body);
+        }
+        .file-card.active { display: block; animation: fadeIn 0.4s ease; }
+        
+        .file-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .file-name { font-weight: 600; font-size: 0.95rem; }
+        .file-size { font-size: 0.8rem; color: var(--text-secondary); }
+        .remove-file { color: var(--danger); cursor: pointer; font-size: 0.85rem; }
+        
+        .progress-container { height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-bar { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.2s linear; }
+        .status-text { font-size: 0.8rem; color: var(--text-secondary); display: flex; justify-content: space-between; }
+
+        /* Action Buttons Grid */
+        .actions-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem; margin-top: 2rem; opacity: 0.5; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .actions-grid.active { opacity: 1; pointer-events: all; }
+
+        .action-btn {
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+            padding: 1.25rem; border-radius: var(--radius-md);
+            text-align: left; transition: all var(--trans-fast);
+            display: flex; flex-direction: column; gap: 8px;
+            position: relative; overflow: hidden;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px); box-shadow: var(--shadow-md);
+            border-color: var(--text-primary);
+        }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn h4 { font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+        .action-btn p { font-size: 0.8rem; color: var(--text-secondary); }
+        .action-btn svg { width: 18px; height: 18px; }
+
+        .btn-loader {
+            display: none; width: 16px; height: 16px; border: 2px solid var(--text-secondary);
+            border-top-color: var(--text-primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .action-btn.loading h4, .action-btn.loading p { visibility: hidden; }
+        .action-btn.loading .btn-loader { display: block; position: absolute; top: 50%; left: 20px; transform: translateY(-50%); }
+
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        /* ----------------------------------------------------------------
+           6. RIGHT PANEL
+        ---------------------------------------------------------------- */
+        .right-panel {
+            grid-column: 3 / 4;
+            background: var(--bg-surface); border-left: 1px solid var(--border-color);
+            padding: 1.5rem; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 1.5rem;
+        }
+
+        .stat-card {
+            padding: 1.25rem; border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); background: var(--bg-body);
+        }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .stat-trend { font-size: 0.75rem; margin-top: 4px; display: inline-block; padding: 2px 6px; border-radius: 4px; background: rgba(5, 150, 105, 0.1); color: var(--success); }
+
+        .recent-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .recent-item:last-child { border-bottom: none; }
+        .recent-icon { width: 32px; height: 32px; background: var(--bg-body); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); }
+        .recent-info h5 { font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+        .recent-info span { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* ----------------------------------------------------------------
+           7. MOBILE FEATURES & RESPONSIVE
+        ---------------------------------------------------------------- */
+        .mobile-fab {
+            display: none; position: fixed; bottom: 24px; right: 24px;
+            width: 56px; height: 56px; background: var(--accent-color); color: var(--accent-text);
+            border-radius: 50%; box-shadow: var(--shadow-lg); z-index: 90;
+            align-items: center; justify-content: center;
+            transition: transform 0.2s;
+        }
+        .mobile-fab:active { transform: scale(0.9); }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay); z-index: 45;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            backdrop-filter: blur(2px);
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed; bottom: 30px; right: 30px; z-index: 100;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            background: var(--bg-surface); color: var(--text-primary);
+            padding: 12px 20px; border-radius: var(--radius-md);
+            box-shadow: var(--shadow-premium); border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 12px;
+            animation: slideInRight 0.3s forwards;
+            min-width: 300px;
+        }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+
+        /* Keyframes */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOutRight { to { transform: translateX(100%); opacity: 0; } }
+
+        /* Media Queries */
+        @media (max-width: 1280px) {
+            .app-container { grid-template-columns: var(--sidebar-width) 1fr 0px; }
+            .right-panel { display: none; }
+        }
+
+        @media (max-width: 1024px) {
+            :root { --sidebar-width: 70px; } /* Auto Collapse Tablet */
+            .nav-group-label, .logo-text, .nav-item span { display: none; }
+            .nav-item { justify-content: center; padding: 12px 0; }
+            .logo-area { justify-content: center; padding: 0; }
+            .logo-mark { margin: 0; }
+            .app-container { grid-template-columns: var(--sidebar-width) 1fr 0px; }
+        }
+
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: 1fr; grid-template-rows: var(--header-height) 1fr; }
+            .sidebar {
+                position: fixed; left: -100%; width: 280px; height: 100vh;
+                box-shadow: var(--shadow-premium); transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .sidebar.mobile-open { left: 0; }
+            .nav-group-label, .logo-text, .nav-item span { display: block; } /* Reset for mobile drawer */
+            .nav-item { justify-content: flex-start; padding: 12px; }
+            .logo-area { justify-content: flex-start; padding: 0 0.5rem; }
+            
+            .top-navbar { padding: 0 1rem; grid-column: 1 / -1; }
+            .hamburger { display: block; }
+            .search-wrapper { display: none; }
+            .user-profile span { display: none; }
+            .main-content { padding: 1.5rem 1rem; padding-bottom: 100px; } /* Space for FAB */
+            .mobile-fab { display: flex; }
+        }
+
+    </style>
+</head>
+<body class="light-mode">
+
+    <!-- Overlay for Mobile Sidebar -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="app-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <div class="logo-mark">T</div>
+                <div class="logo-text">TenderAI</div>
+            </div>
+
+            <div class="nav-scroll">
+                <ul>
+                    <li class="nav-item active" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg><span>Dashboard</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg><span>Upload Tender</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><span>My Tenders</span></li>
+                    
+                    <div class="nav-group-label">AI Tools</div>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg><span>Proposal Generator</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg><span>Eligibility Extractor</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg><span>Checklist Builder</span></li>
+                    
+                    <div class="nav-group-label">Analytics</div>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>EMD Calculator</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Deadline Tracker</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg><span>Tender Alerts</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><span>Competitor Analysis</span></li>
+                    
+                    <div class="nav-group-label">Account</div>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg><span>Subscription</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg><span>Settings</span></li>
+                    <li class="nav-item" onclick="setActive(this)"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg><span>Logout</span></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- TOP NAVBAR -->
+        <header class="top-navbar">
+            <div class="nav-left">
+                <button class="hamburger" id="hamburger">
+                    <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" class="search-input" placeholder="Search tenders, documents..." id="searchInput">
+                </div>
+            </div>
+
+            <div class="nav-right">
+                <span class="badge-pro">PRO PLAN</span>
+                
+                <button class="icon-btn" id="notifBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span class="notification-dot"></span>
+                    <div class="dropdown-menu" id="notifDropdown">
+                        <a href="#" class="dropdown-item">New Tender: Metro Rail Phase 2</a>
+                        <a href="#" class="dropdown-item">Proposal generated successfully</a>
+                        <a href="#" class="dropdown-item">Subscription renews in 5 days</a>
+                    </div>
+                </button>
+
+                <button class="icon-btn" id="themeToggle">
+                    <!-- Sun Icon (Dark mode) -->
+                    <svg class="sun-icon" style="display:none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <!-- Moon Icon (Light mode) -->
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+
+                <div class="user-profile" id="userProfileBtn">
+                    <span>John Doe</span>
+                    <img src="https://picsum.photos/seed/tenderai/100/100" alt="Avatar" class="avatar">
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="#" class="dropdown-item">My Profile</a>
+                        <a href="#" class="dropdown-item">Billing</a>
+                        <a href="#" class="dropdown-item">Help Center</a>
+                        <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+                        <a href="#" class="dropdown-item" style="color: var(--danger);">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Upload Government Tender</h1>
+                <p class="page-sub">AI extracts eligibility, EMD, deadlines and generates proposal drafts in seconds.</p>
+            </div>
+
+            <div class="upload-section">
+                <input type="file" id="fileInput" class="upload-btn-input" accept=".pdf">
+                
+                <div class="drop-zone" id="dropZone">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                    <h3>Drag & Drop PDF or Click to Browse</h3>
+                    <p style="color: var(--text-secondary); margin-top: 8px; font-size: 0.9rem;">Max file size: 50MB</p>
+                </div>
+
+                <div class="file-card" id="fileCard">
+                    <div class="file-meta">
+                        <div>
+                            <div class="file-name" id="fileName">tender_doc_v1.pdf</div>
+                            <div class="file-size" id="fileSize">2.4 MB</div>
+                        </div>
+                        <span class="remove-file" id="removeFile">Remove</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="status-text">
+                        <span id="uploadStatus">Processing...</span>
+                        <span id="uploadPercent">0%</span>
+                    </div>
+                </div>
+
+                <div class="actions-grid" id="actionsGrid">
+                    <button class="action-btn" onclick="simulateAI(this, 'Eligibility Extraction')">
+                        <h4><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Extract Eligibility</h4>
+                        <p>Analyze criteria compliance</p>
+                        <div class="btn-loader"></div>
+                    </button>
+                    <button class="action-btn" onclick="simulateAI(this, 'Executive Summary')">
+                        <h4><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h10" /></svg> Generate Summary</h4>
+                        <p>Key points & deadlines</p>
+                        <div class="btn-loader"></div>
+                    </button>
+                    <button class="action-btn" onclick="simulateAI(this, 'Document Checklist')">
+                        <h4><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg> Generate Checklist</h4>
+                        <p>Required documents list</p>
+                        <div class="btn-loader"></div>
+                    </button>
+                    <button class="action-btn" onclick="simulateAI(this, 'Proposal Draft')">
+                        <h4><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> Proposal Draft</h4>
+                        <p>AI-generated first draft</p>
+                        <div class="btn-loader"></div>
+                    </button>
+                    <button class="action-btn" onclick="simulateAI(this, 'Bid Feasibility')">
+                        <h4><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg> Analyze Feasibility</h4>
+                        <p>Risk & profit analysis</p>
+                        <div class="btn-loader"></div>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL -->
+        <aside class="right-panel">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem;">Insights</h3>
+            
+            <div class="stat-card">
+                <div class="stat-label">AI Credits Remaining</div>
+                <div class="stat-value" data-target="850">0</div>
+                <div class="stat-trend">Unlimited Plan</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Success Rate</div>
+                <div class="stat-value"><span data-target="94">0</span>%</div>
+                <div class="stat-trend">↑ 12% vs last month</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Time Saved</div>
+                <div class="stat-value"><span data-target="42">0</span>h</div>
+                <div class="stat-trend">This month</div>
+            </div>
+
+            <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem 0;">Recent Uploads</h3>
+            <div class="recent-item">
+                <div class="recent-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                <div class="recent-info">
+                    <h5>Metro_Construction.pdf</h5>
+                    <span>2 hours ago</span>
+                </div>
+            </div>
+            <div class="recent-item">
+                <div class="recent-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                <div class="recent-info">
+                    <h5>IT_Infrastructure_RFP.pdf</h5>
+                    <span>Yesterday</span>
+                </div>
+            </div>
+            <div class="recent-item">
+                <div class="recent-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg></div>
+                <div class="recent-info">
+                    <h5>Bridge_Maint_Tender.pdf</h5>
+                    <span>3 days ago</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile FAB -->
+        <button class="mobile-fab" id="mobileFab">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toastContainer"></div>
+
+    </div>
+
+    <script>
+        /* ----------------------------------------------------------------
+           1. THEME & INITIALIZATION
+        ---------------------------------------------------------------- */
+        const body = document.body;
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        const sidebar = document.getElementById('sidebar');
+        const hamburger = document.getElementById('hamburger');
+        const overlay = document.getElementById('overlay');
+        const mobileFab = document.getElementById('mobileFab');
+
+        // Load Theme
+        const savedTheme = localStorage.getItem('theme') || 'light-mode';
+        body.className = savedTheme;
+        updateThemeIcons();
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+            const isDark = body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark-mode' : 'light-mode');
+            updateThemeIcons();
+        });
+
+        function updateThemeIcons() {
+            const isDark = body.classList.contains('dark-mode');
+            sunIcon.style.display = isDark ? 'block' : 'none';
+            moonIcon.style.display = isDark ? 'none' : 'block';
+        }
+
+        /* ----------------------------------------------------------------
+           2. SIDEBAR & NAVIGATION LOGIC
+        ---------------------------------------------------------------- */
+        
+        // Mobile Toggle
+        function toggleSidebar() {
+            const isOpen = sidebar.classList.contains('mobile-open');
+            if (isOpen) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+            } else {
+                sidebar.classList.add('mobile-open');
+                overlay.classList.add('active');
+            }
+        }
+
+        hamburger.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Active Link Logic with Ripple
+        function setActive(element) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Ripple Effect
+            const circle = document.createElement('span');
+            circle.classList.add('ripple');
+            const diameter = Math.max(element.clientWidth, element.clientHeight);
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${element.clientWidth / 2 - diameter / 2}px`;
+            circle.style.top = `${element.clientHeight / 2 - diameter / 2}px`;
+            element.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+
+            // On mobile, close after click
+            if (window.innerWidth <= 768) toggleSidebar();
+        }
+
+        // Dropdowns
+        document.querySelectorAll('.icon-btn, .user-profile').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const dropdown = btn.querySelector('.dropdown-menu');
+                // Close others
+                document.querySelectorAll('.dropdown-menu').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('active');
+                });
+                if (dropdown) dropdown.classList.toggle('active');
+            });
+        });
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('active'));
+        });
+
+        /* ----------------------------------------------------------------
+           3. DRAG & DROP UPLOAD SIMULATION
+        ---------------------------------------------------------------- */
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileCard = document.getElementById('fileCard');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const progressBar = document.getElementById('progressBar');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const uploadPercent = document.getElementById('uploadPercent');
+        const removeFileBtn = document.getElementById('removeFile');
+        const actionsGrid = document.getElementById('actionsGrid');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                showToast('Please upload a PDF file', 'error');
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('File exceeds 50MB limit', 'error');
+                return;
+            }
+
+            // UI Update
+            dropZone.style.display = 'none';
+            fileCard.classList.add('active');
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            
+            // Simulate Upload
+            simulateProgress();
+        }
+
+        function simulateProgress() {
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    uploadStatus.textContent = 'Analysis Complete';
+                    uploadPercent.textContent = '100%';
+                    actionsGrid.classList.add('active');
+                    showToast('Document uploaded and ready for AI', 'success');
+                } else {
+                    width += Math.random() * 10;
+                    if(width > 100) width = 100;
+                    progressBar.style.width = width + '%';
+                    uploadPercent.textContent = Math.floor(width) + '%';
+                }
+            }, 200);
+        }
+
+        removeFileBtn.addEventListener('click', () => {
+            dropZone.style.display = 'block';
+            fileCard.classList.remove('active');
+            actionsGrid.classList.remove('active');
+            progressBar.style.width = '0%';
+            fileInput.value = '';
+        });
+
+        // Mobile FAB clicks upload
+        mobileFab.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => dropZone.click(), 500);
+        });
+
+        /* ----------------------------------------------------------------
+           4. AI ACTION SIMULATION
+        ---------------------------------------------------------------- */
+        function simulateAI(btn, actionName) {
+            if (btn.classList.contains('loading')) return;
+            
+            btn.classList.add('loading');
+            
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                showToast(`${actionName} generated successfully!`, 'success');
+            }, 2500);
+        }
+
+        /* ----------------------------------------------------------------
+           5. COUNT-UP ANIMATION FOR STATS
+        ---------------------------------------------------------------- */
+        const counters = document.querySelectorAll('[data-target]');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counter = entry.target;
+                    const target = +counter.getAttribute('data-target');
+                    const inc = target / 50; 
+                    
+                    let count = 0;
+                    const updateCount = () => {
+                        count += inc;
+                        if (count < target) {
+                            counter.innerText = Math.ceil(count);
+                            requestAnimationFrame(updateCount);
+                        } else {
+                            counter.innerText = target;
+                        }
+                    };
+                    updateCount();
+                    observer.unobserve(counter);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        counters.forEach(counter => observer.observe(counter));
+
+        /* ----------------------------------------------------------------
+           6. TOAST SYSTEM
+        ---------------------------------------------------------------- */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' 
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round"/></svg>';
+
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutRight 0.3s forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Optional: Simulated sound toggle (visual only as per browser policy)
+        let soundEnabled = false;
+        // Logic would go here if using user-activated audio context
+
+    </script>
+</body>
+</html>

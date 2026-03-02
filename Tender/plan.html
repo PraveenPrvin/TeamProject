@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TenderAI | Subscription System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & THEME
+           ========================================= */
+        :root {
+            --bg-body: #ffffff;
+            --bg-surface: #f9f9f9;
+            --bg-panel: #ffffff;
+            --text-main: #000000;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #000000;
+            --accent-text: #ffffff;
+            --danger-color: #ff4d4f;
+            --success-color: #52c41a;
+            
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.1);
+            
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            
+            --font-main: 'Inter', sans-serif;
+            --trans-med: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            --bg-body: #050505;
+            --bg-surface: #0f0f0f;
+            --bg-panel: #0a0a0a;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border-color: #222222;
+            --accent-color: #ffffff;
+            --accent-text: #000000;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5);
+            --shadow-hover: 0 10px 30px rgba(255, 255, 255, 0.05);
+        }
+
+        /* =========================================
+           2. RESET & BASE
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            transition: background-color var(--trans-med), color var(--trans-med);
+            overflow-x: hidden;
+        }
+        button { cursor: pointer; font-family: inherit; border: none; background: none; }
+
+        /* =========================================
+           3. LAYOUT & COMPONENTS
+           ========================================= */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        
+        /* Navbar */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 40px;
+        }
+        .logo { font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+        .nav-right { display: flex; gap: 16px; align-items: center; }
+        .badge {
+            padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+            background: var(--bg-surface); border: 1px solid var(--border-color);
+        }
+
+        /* Views */
+        .view-section { display: none; animation: fadeIn 0.5s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Pricing Grid */
+        .pricing-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px; margin-bottom: 40px;
+        }
+        .price-card {
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 32px;
+            transition: all var(--trans-med); position: relative;
+            display: flex; flex-direction: column;
+        }
+        .price-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); border-color: var(--text-main); }
+        .price-card.active { border: 2px solid var(--text-main); background: var(--bg-surface); }
+        
+        .plan-name { font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--text-muted); }
+        .plan-price { font-size: 2.5rem; font-weight: 700; margin-bottom: 24px; }
+        .plan-price span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+        
+        .features-list { list-style: none; margin-bottom: 32px; flex-grow: 1; }
+        .features-list li { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+        .check-icon { color: var(--success-color); font-weight: bold; }
+        .disabled-text { color: var(--text-muted); opacity: 0.5; text-decoration: line-through; }
+
+        .btn {
+            width: 100%; padding: 14px; border-radius: var(--radius-sm);
+            font-weight: 600; transition: all var(--trans-med);
+            background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-color);
+        }
+        .btn:hover { border-color: var(--text-main); }
+        .btn-primary { background: var(--text-main); color: var(--accent-text); border: none; }
+        .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Dashboard */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; }
+        .usage-bar-container { background: var(--bg-surface); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 32px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .usage-info { flex: 1; }
+        .progress-track { height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--text-main); width: 0%; transition: width 0.5s ease; }
+        
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px; }
+        .feature-card {
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            padding: 24px; border-radius: var(--radius-md); text-align: center;
+            transition: all 0.2s;
+        }
+        
+        /* Feature Gating Styles */
+        .feature-card.locked {
+            opacity: 0.6; filter: grayscale(100%); pointer-events: none;
+        }
+        .feature-card.locked:hover { cursor: not-allowed; }
+        
+        /* Tooltip for Locked Items */
+        [data-tooltip] { position: relative; cursor: pointer; }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(-8px);
+            background: var(--text-main); color: var(--bg-body); padding: 6px 12px;
+            border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s; font-weight: 500;
+        }
+        [data-tooltip]:hover::after { opacity: 1; }
+
+        .icon-box { width: 48px; height: 48px; background: var(--bg-surface); border-radius: 50%; display: grid; place-items: center; margin: 0 auto 16px; border: 1px solid var(--border-color); }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border-color); border-radius: var(--radius-md);
+            padding: 40px; text-align: center; cursor: pointer; transition: border 0.3s; margin-bottom: 32px;
+        }
+        .upload-zone:hover { border-color: var(--text-main); background: var(--bg-surface); }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            z-index: 100; display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; animation: fadeIn 0.3s; }
+        .modal {
+            background: var(--bg-panel); width: 90%; max-width: 450px;
+            padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-hover);
+            text-align: center;
+        }
+        .modal h2 { margin-bottom: 12px; }
+        .modal p { color: var(--text-muted); margin-bottom: 24px; }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 110; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: var(--text-main); color: var(--bg-body); padding: 12px 24px;
+            border-radius: var(--radius-sm); box-shadow: var(--shadow-hover);
+            animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        /* Utility */
+        .text-sm { font-size: 0.9rem; color: var(--text-muted); }
+        .mt-4 { margin-top: 16px; }
+        .d-flex { display: flex; gap: 8px; }
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body class="light-mode">
+
+    <div class="container">
+        <!-- Navbar -->
+        <nav>
+            <div class="logo">TenderAI</div>
+            <div class="nav-right">
+                <div id="current-plan-badge" class="badge">STARTER PLAN</div>
+                <button class="btn" style="padding: 8px 16px; width: auto;" onclick="toggleTheme()">Theme</button>
+                <button class="btn btn-primary" style="padding: 8px 16px; width: auto;" onclick="showView('pricing')">Change Plan</button>
+            </div>
+        </nav>
+
+        <!-- VIEW 1: PRICING PAGE -->
+        <section id="view-pricing" class="view-section active">
+            <div style="text-align: center; margin-bottom: 48px;">
+                <h1 style="font-size: 2.5rem; margin-bottom: 12px;">Choose your Intelligence Plan</h1>
+                <p class="text-sm">Unlock government tender insights with AI precision.</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Starter -->
+                <div class="price-card" id="card-starter">
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">₹1499<span>/mo</span></div>
+                    <ul class="features-list">
+                        <li><span class="check-icon">✓</span> 5 PDFs per month</li>
+                        <li><span class="check-icon">✓</span> Basic Extraction</li>
+                        <li><span class="check-icon">✓</span> Email Support</li>
+                        <li class="disabled-text"><span class="check-icon">✕</span> Proposal Drafting AI</li>
+                        <li class="disabled-text"><span class="check-icon">✕</span> Eligibility Match Score</li>
+                        <li class="disabled-text"><span class="check-icon">✕</span> API Access</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="selectPlan('starter')">Select Starter</button>
+                </div>
+
+                <!-- Pro -->
+                <div class="price-card" id="card-pro">
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">₹3999<span>/mo</span></div>
+                    <ul class="features-list">
+                        <li><span class="check-icon">✓</span> 25 PDFs per month</li>
+                        <li><span class="check-icon">✓</span> Proposal Drafting AI</li>
+                        <li><span class="check-icon">✓</span> Eligibility Match Score</li>
+                        <li><span class="check-icon">✓</span> Priority Support</li>
+                        <li class="disabled-text"><span class="check-icon">✕</span> API Access</li>
+                        <li class="disabled-text"><span class="check-icon">✕</span> Dedicated Manager</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="selectPlan('pro')">Select Pro</button>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="price-card" id="card-enterprise">
+                    <div class="plan-name">Enterprise</div>
+                    <div class="plan-price">₹9999<span>/mo</span></div>
+                    <ul class="features-list">
+                        <li><span class="check-icon">✓</span> <strong>Unlimited</strong> PDFs</li>
+                        <li><span class="check-icon">✓</span> API Access</li>
+                        <li><span class="check-icon">✓</span> Dedicated Account Manager</li>
+                        <li><span class="check-icon">✓</span> Custom AI Training</li>
+                        <li><span class="check-icon">✓</span> All Pro Features</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="selectPlan('enterprise')">Select Enterprise</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: DASHBOARD (SIMULATION) -->
+        <section id="view-dashboard" class="view-section">
+            <div class="dashboard-header">
+                <div>
+                    <h2 style="font-size: 2rem; margin-bottom: 8px;">Workspace</h2>
+                    <p class="text-sm">Manage your tenders and AI tools.</p>
+                </div>
+                <button class="btn" style="width: auto; font-size: 0.8rem;" onclick="resetMonth()">Simulate Month Reset</button>
+            </div>
+
+            <!-- Usage Stats -->
+            <div class="usage-bar-container">
+                <div class="usage-info">
+                    <div class="text-sm" style="margin-bottom: 4px;">Monthly Upload Usage</div>
+                    <div style="font-size: 1.2rem; font-weight: 700;">
+                        <span id="usage-count">0</span> / <span id="usage-limit">5</span> PDFs
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="usage-bar"></div>
+                    </div>
+                </div>
+                <div style="border-left: 1px solid var(--border-color); padding-left: 20px;">
+                    <div class="text-sm">Current Plan</div>
+                    <div id="dash-plan-name" style="font-weight: 700;">Starter</div>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-zone" id="upload-area" onclick="handleUpload()">
+                <div style="font-size: 3rem; margin-bottom: 16px;">📄</div>
+                <h3>Upload Tender Document</h3>
+                <p class="text-sm" style="margin-top: 8px;">Click to upload PDF (Max 50MB)</p>
+            </div>
+
+            <!-- Features Grid -->
+            <h3 style="margin-bottom: 20px;">AI Tools & Services</h3>
+            <div class="feature-grid">
+                
+                <!-- Feature 1: Basic Extraction (Always on) -->
+                <div class="feature-card" id="feat-basic">
+                    <div class="icon-box">⚡</div>
+                    <h4>Basic Extraction</h4>
+                    <p class="text-sm mt-4">Extract text and tables from PDFs.</p>
+                    <button class="btn mt-4" onclick="runFeature('basic')">Run Extraction</button>
+                </div>
+
+                <!-- Feature 2: Proposal AI (Pro+) -->
+                <div class="feature-card" id="feat-proposal">
+                    <div class="icon-box">✍️</div>
+                    <h4>Proposal Drafting AI</h4>
+                    <p class="text-sm mt-4">Auto-generate technical proposals.</p>
+                    <button class="btn mt-4" onclick="runFeature('proposal')">Generate Draft</button>
+                </div>
+
+                <!-- Feature 3: Eligibility (Pro+) -->
+                <div class="feature-card" id="feat-eligibility">
+                    <div class="icon-box">🎯</div>
+                    <h4>Eligibility Score</h4>
+                    <p class="text-sm mt-4">Match your profile against tender criteria.</p>
+                    <button class="btn mt-4" onclick="runFeature('eligibility')">Check Score</button>
+                </div>
+
+                <!-- Feature 4: API (Enterprise) -->
+                <div class="feature-card" id="feat-api">
+                    <div class="icon-box">🔌</div>
+                    <h4>API Access</h4>
+                    <p class="text-sm mt-4">Integrate TenderAI into your CRM.</p>
+                    <button class="btn mt-4" onclick="runFeature('api')">View Keys</button>
+                </div>
+
+                <!-- Feature 5: Manager (Enterprise) -->
+                <div class="feature-card" id="feat-manager">
+                    <div class="icon-box">🤝</div>
+                    <h4>Dedicated Manager</h4>
+                    <p class="text-sm mt-4">Contact your account success manager.</p>
+                    <button class="btn mt-4" onclick="runFeature('manager')">Contact</button>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div id="upgrade-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="font-size: 3rem; margin-bottom: 16px;">🔒</div>
+            <h2>Feature Locked</h2>
+            <p id="upgrade-msg">This feature is not available on your current plan.</p>
+            <button class="btn btn-primary" onclick="closeModal('upgrade-modal'); showView('pricing')">Upgrade Plan</button>
+            <button class="btn mt-4" onclick="closeModal('upgrade-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="limit-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="font-size: 3rem; margin-bottom: 16px;">📊</div>
+            <h2>Limit Reached</h2>
+            <p>You have reached your monthly upload limit. Upgrade to continue processing tenders.</p>
+            <button class="btn btn-primary" onclick="closeModal('limit-modal'); showView('pricing')">View Plans</button>
+            <button class="btn mt-4" onclick="closeModal('limit-modal')">Close</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // =========================================
+        // 1. ARCHITECTURE CONFIG
+        // =========================================
+        const PLANS = {
+            starter: {
+                name: "STARTER",
+                price: "₹1499",
+                limit: 5,
+                features: {
+                    basic: true,
+                    proposal: false,
+                    eligibility: false,
+                    api: false,
+                    manager: false
+                }
+            },
+            pro: {
+                name: "PRO",
+                price: "₹3999",
+                limit: 25,
+                features: {
+                    basic: true,
+                    proposal: true,
+                    eligibility: true,
+                    api: false,
+                    manager: false
+                }
+            },
+            enterprise: {
+                name: "ENTERPRISE",
+                price: "₹9999",
+                limit: Infinity,
+                features: {
+                    basic: true,
+                    proposal: true,
+                    eligibility: true,
+                    api: true,
+                    manager: true
+                }
+            }
+        };
+
+        // =========================================
+        // 2. STATE MANAGEMENT
+        // =========================================
+        const state = {
+            currentPlan: 'starter', // default
+            uploadsUsed: 0
+        };
+
+        // Load from local storage if available
+        const savedPlan = localStorage.getItem('tenderAI_plan');
+        if(savedPlan && PLANS[savedPlan]) {
+            state.currentPlan = savedPlan;
+        }
+
+        // =========================================
+        // 3. CORE FUNCTIONS
+        // =========================================
+
+        function init() {
+            updatePricingUI();
+            updateDashboardUI();
+        }
+
+        // --- PLAN SELECTION ---
+        function selectPlan(planKey) {
+            state.currentPlan = planKey;
+            // Note: We keep the upload count even on upgrade for demo purposes, 
+            // but in real life you might reset it.
+            localStorage.setItem('tenderAI_plan', planKey);
+            
+            showToast(`Subscribed to ${PLANS[planKey].name}`, 'success');
+            updatePricingUI();
+            setTimeout(() => {
+                showView('dashboard');
+            }, 800);
+        }
+
+        // --- UI UPDATES ---
+        function updatePricingUI() {
+            // Highlight active card
+            document.querySelectorAll('.price-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`card-${state.currentPlan}`).classList.add('active');
+            
+            // Update buttons text
+            ['starter', 'pro', 'enterprise'].forEach(plan => {
+                const btn = document.querySelector(`#card-${plan} button`);
+                if(plan === state.currentPlan) {
+                    btn.innerText = "Current Plan";
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = `Select ${PLANS[plan].name}`;
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        function updateDashboardUI() {
+            const plan = PLANS[state.currentPlan];
+            
+            // Update Badges
+            document.getElementById('current-plan-badge').innerText = `${plan.name} PLAN`;
+            document.getElementById('dash-plan-name').innerText = plan.name;
+
+            // Update Usage Bar
+            const limitDisplay = plan.limit === Infinity ? '∞' : plan.limit;
+            document.getElementById('usage-limit').innerText = limitDisplay;
+            document.getElementById('usage-count').innerText = state.uploadsUsed;
+            
+            const percentage = plan.limit === Infinity ? 100 : (state.uploadsUsed / plan.limit) * 100;
+            document.getElementById('usage-bar').style.width = `${percentage}%`;
+            
+            // Color code bar
+            const bar = document.getElementById('usage-bar');
+            if(percentage > 90) bar.style.backgroundColor = 'var(--danger-color)';
+            else bar.style.backgroundColor = 'var(--text-main)';
+
+            // --- FEATURE GATING LOGIC ---
+            const features = ['basic', 'proposal', 'eligibility', 'api', 'manager'];
+            
+            features.forEach(feat => {
+                const card = document.getElementById(`feat-${feat}`);
+                const btn = card.querySelector('button');
+                const isAllowed = plan.features[feat];
+
+                if (isAllowed) {
+                    // Enable
+                    card.classList.remove('locked');
+                    btn.removeAttribute('disabled');
+                    btn.removeAttribute('data-tooltip');
+                    btn.classList.remove('hidden');
+                } else {
+                    // Disable
+                    card.classList.add('locked');
+                    btn.setAttribute('disabled', 'true');
+                    
+                    // Determine upgrade message
+                    let upgradeTarget = 'Pro';
+                    if(feat === 'api' || feat === 'manager') upgradeTarget = 'Enterprise';
+                    else if(feat === 'proposal' || feat === 'eligibility') upgradeTarget = 'Pro';
+                    
+                    btn.setAttribute('data-tooltip', `Upgrade to ${upgradeTarget}`);
+                }
+            });
+        }
+
+        // --- ACTIONS ---
+        
+        function showView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            if(viewName === 'dashboard') updateDashboardUI();
+            if(viewName === 'pricing') updatePricingUI();
+        }
+
+        function handleUpload() {
+            const plan = PLANS[state.currentPlan];
+            
+            if (state.uploadsUsed >= plan.limit) {
+                document.getElementById('limit-modal').classList.add('open');
+                return;
+            }
+
+            // Simulate Upload
+            const zone = document.getElementById('upload-area');
+            zone.innerHTML = `<div style="font-size: 2rem;">⏳</div><h3>Uploading...</h3>`;
+            
+            setTimeout(() => {
+                state.uploadsUsed++;
+                updateDashboardUI();
+                showToast("PDF Uploaded Successfully", "success");
+                
+                // Reset zone visual
+                zone.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 16px;">📄</div>
+                    <h3>Upload Tender Document</h3>
+                    <p class="text-sm" style="margin-top: 8px;">Click to upload PDF (Max 50MB)</p>
+                `;
+            }, 1000);
+        }
+
+        function runFeature(featureName) {
+            // Double check security
+            if(!PLANS[state.currentPlan].features[featureName]) return;
+
+            showToast(`Running ${featureName}...`, 'success');
+        }
+
+        function resetMonth() {
+            state.uploadsUsed = 0;
+            updateDashboardUI();
+            showToast("Monthly Usage Reset", 'success');
+        }
+
+        // --- UTILS ---
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Initialize
+        init();
+
+    </script>
+</body>
+</html>

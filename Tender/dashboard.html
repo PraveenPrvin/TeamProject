@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TenderAI | Enterprise Dashboard</title>
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & THEME SETUP
+           ========================================= */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            /* Light Mode Defaults */
+            --bg-body: #ffffff;
+            --bg-surface: #f9f9f9;
+            --bg-panel: #ffffff;
+            --text-main: #000000;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --border-hover: #000000;
+            --accent-color: #000000;
+            --accent-text: #ffffff;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --glow: none;
+            --grid-line: #eeeeee;
+            
+            /* Dimensions */
+            --sidebar-width: 260px;
+            --right-panel-width: 300px;
+            --header-height: 70px;
+            --radius-md: 12px;
+            --radius-sm: 6px;
+            
+            /* Transitions */
+            --trans-fast: 0.2s ease;
+            --trans-med: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            --trans-slow: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            --bg-body: #050505;
+            --bg-surface: #0f0f0f;
+            --bg-panel: #0a0a0a;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border-color: #222222;
+            --border-hover: #ffffff;
+            --accent-color: #ffffff;
+            --accent-text: #000000;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5);
+            --shadow-hover: 0 0 25px rgba(255, 255, 255, 0.15);
+            --glow: 0 0 15px rgba(255, 255, 255, 0.1);
+            --grid-line: #1a1a1a;
+        }
+
+        /* Subtle Animated Gradient Background (Dark Mode) */
+        body.dark-mode::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 15% 50%, rgba(30,30,30,0.4), transparent 25%),
+                        radial-gradient(circle at 85% 30%, rgba(30,30,30,0.4), transparent 25%);
+            z-index: -1;
+            animation: gradientShift 10s ease infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* =========================================
+           2. RESET & BASE STYLES
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            transition: background-color var(--trans-med), color var(--trans-med);
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Typography Utilities */
+        .h1 { font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 700; letter-spacing: -0.5px; }
+        .h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.3px; }
+        .h3 { font-size: 1rem; font-weight: 600; }
+        .text-sm { font-size: 0.85rem; color: var(--text-muted); }
+        .text-xs { font-size: 0.75rem; color: var(--text-muted); }
+        .badge { padding: 4px 10px; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-pro { background: var(--accent-color); color: var(--accent-text); }
+
+        /* =========================================
+           3. LAYOUT GRID
+           ========================================= */
+        #app {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr var(--right-panel-width);
+            grid-template-rows: var(--header-height) 1fr;
+            min-height: 100vh;
+            transition: grid-template-columns var(--trans-med);
+        }
+
+        /* Mobile Layout */
+        @media (max-width: 1200px) {
+            #app { grid-template-columns: var(--sidebar-width) 1fr 0; }
+            #insights-panel { display: none; }
+        }
+        @media (max-width: 900px) {
+            #app { grid-template-columns: 0 1fr 0; } /* Sidebar hidden initially */
+            #app.sidebar-open { grid-template-columns: var(--sidebar-width) 1fr 0; }
+        }
+        @media (max-width: 600px) {
+            #app { display: block; } /* Block for mobile drawer */
+            #main-content { padding-top: var(--header-height); }
+        }
+
+        /* =========================================
+           4. SIDEBAR
+           ========================================= */
+        #sidebar {
+            grid-row: 1 / -1;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            position: relative;
+            z-index: 50;
+            transition: transform var(--trans-med);
+        }
+        
+        /* Mobile Drawer Handling */
+        @media (max-width: 600px) {
+            #sidebar {
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                width: 280px;
+                transform: translateX(-100%);
+                box-shadow: var(--shadow-hover);
+            }
+            #sidebar.mobile-open { transform: translateX(0); }
+        }
+
+        .logo-area {
+            padding: 0 24px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon { width: 32px; height: 32px; background: var(--text-main); border-radius: 6px; display: grid; place-items: center; color: var(--bg-body); }
+        .logo-text { font-weight: 800; font-size: 1.2rem; letter-spacing: -1px; }
+
+        .nav-group { margin-bottom: 32px; }
+        .nav-label {
+            padding: 0 24px 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        .nav-item {
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            transition: all var(--trans-fast);
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .nav-item:hover { color: var(--text-main); background: var(--bg-surface); }
+        .nav-item.active {
+            color: var(--text-main);
+            font-weight: 600;
+            background: var(--bg-surface);
+            border-right: 2px solid var(--text-main);
+        }
+        .nav-item svg { width: 18px; height: 18px; stroke-width: 2; }
+
+        /* Ripple Effect for Sidebar */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--text-main);
+            opacity: 0.1;
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+        }
+        @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+        /* =========================================
+           5. TOP NAVBAR
+           ========================================= */
+        #topbar {
+            grid-column: 2 / 3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            background: var(--bg-body); /* Sticky bg */
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        @media (max-width: 600px) {
+            #topbar {
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                padding: 0 16px;
+                height: var(--header-height);
+            }
+            #topbar-left { display: none; } /* Hide search on mobile */
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border-radius: 100px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: border-color var(--trans-fast);
+        }
+        .search-box input:focus { border-color: var(--text-main); }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-muted); }
+
+        .topbar-right { display: flex; align-items: center; gap: 20px; }
+        
+        .theme-toggle {
+            width: 44px; height: 24px;
+            background: var(--border-color);
+            border-radius: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: background var(--trans-fast);
+        }
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: var(--bg-body);
+            border-radius: 50%;
+            transition: transform var(--trans-med);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        body.dark-mode .theme-toggle { background: var(--text-main); }
+        body.dark-mode .theme-toggle::after { transform: translateX(20px); background: #000; }
+
+        .notification-bell { position: relative; cursor: pointer; }
+        .notification-bell .dot { position: absolute; top: 0; right: 0; width: 8px; height: 8px; background: red; border-radius: 50%; border: 2px solid var(--bg-body); }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); }
+        
+        /* Dropdowns */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%; right: 0;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-hover);
+            width: 200px;
+            padding: 8px 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all var(--trans-fast);
+            z-index: 60;
+        }
+        .dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-item {
+            padding: 10px 20px;
+            display: block;
+            font-size: 0.9rem;
+            transition: background var(--trans-fast);
+        }
+        .dropdown-item:hover { background: var(--bg-surface); }
+
+        /* Mobile Hamburger */
+        .hamburger { display: none; font-size: 1.5rem; cursor: pointer; margin-right: 16px; }
+        @media (max-width: 600px) { .hamburger { display: block; } }
+
+        /* =========================================
+           6. MAIN CONTENT AREA
+           ========================================= */
+        #main-content {
+            grid-column: 2 / 3;
+            padding: 32px;
+            overflow-y: auto;
+            min-height: calc(100vh - var(--header-height));
+            position: relative;
+        }
+        @media (max-width: 600px) { #main-content { padding: 20px 16px 100px; } }
+
+        /* Section Transitions */
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: var(--radius-md);
+            transition: all var(--trans-med);
+        }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); border-color: var(--border-hover); }
+        .stat-value { font-size: 2rem; font-weight: 700; margin: 12px 0; }
+        .stat-label { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Upload Section */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 60px 20px;
+            text-align: center;
+            background: var(--bg-surface);
+            transition: all var(--trans-fast);
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--text-main);
+            background: var(--bg-body);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+        body.dark-mode .upload-zone.drag-over { box-shadow: inset 0 0 20px rgba(255,255,255,0.05); }
+
+        /* Action Grid */
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all var(--trans-fast);
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            position: relative; overflow: hidden;
+        }
+        .btn-primary { background: var(--text-main); color: var(--bg-body); }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+        .btn-outline { border: 1px solid var(--border-color); color: var(--text-main); background: var(--bg-panel); }
+        .btn-outline:hover { border-color: var(--text-main); background: var(--bg-surface); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        /* Inputs */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-family: inherit;
+            transition: border var(--trans-fast);
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--text-main); }
+
+        /* File Preview Card */
+        .file-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg-panel); border: 1px solid var(--border-color);
+            padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Right Insights Panel */
+        #insights-panel {
+            grid-column: 3 / 4;
+            grid-row: 2 / -1;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border-color);
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .insight-card {
+            background: var(--bg-surface);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Floating Action Button (Mobile) */
+        #mobile-fab {
+            display: none;
+            position: fixed;
+            bottom: 24px; right: 24px;
+            width: 56px; height: 56px;
+            background: var(--text-main);
+            color: var(--bg-body);
+            border-radius: 50%;
+            box-shadow: var(--shadow-hover);
+            align-items: center; justify-content: center;
+            z-index: 90;
+            transition: transform var(--trans-fast);
+        }
+        #mobile-fab:active { transform: scale(0.9); }
+        @media (max-width: 600px) { #mobile-fab { display: flex; } }
+
+        /* Modals & Toasts */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            z-index: 100; display: none; align-items: center; justify-content: center;
+        }
+        .modal {
+            background: var(--bg-panel); width: 90%; max-width: 500px;
+            padding: 32px; border-radius: var(--radius-md);
+            box-shadow: var(--shadow-hover);
+            transform: scale(0.9); opacity: 0; transition: all var(--trans-med);
+        }
+        #modal-overlay.open .modal { transform: scale(1); opacity: 1; }
+        
+        #toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 110; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
+        .toast {
+            background: var(--text-main); color: var(--bg-body);
+            padding: 12px 20px; border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-hover); font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: space-between;
+            animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Utility Helpers */
+        .d-flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+        .gap-2 { gap: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .w-full { width: 100%; }
+        
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-surface) 25%, var(--border-color) 50%, var(--bg-surface) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Progress Bar */
+        .progress-track { background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { background: var(--text-main); height: 100%; width: 0%; transition: width 0.5s ease; }
+        
+        /* Checkbox Custom */
+        .checklist-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .custom-check {
+            width: 20px; height: 20px; border: 2px solid var(--text-muted);
+            border-radius: 4px; cursor: pointer; display: grid; place-items: center;
+            transition: all 0.2s;
+        }
+        .custom-check.checked { background: var(--text-main); border-color: var(--text-main); }
+        .custom-check svg { width: 14px; height: 14px; color: var(--bg-body); display: none; }
+        .custom-check.checked svg { display: block; }
+
+    </style>
+</head>
+<body class="light-mode">
+
+    <div id="app">
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div class="logo-text">TenderAI</div>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-label">Main</div>
+                <ul>
+                    <li class="nav-item active" onclick="router('dashboard', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        Dashboard
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-label">AI Tools</div>
+                <ul>
+                    <li class="nav-item" onclick="router('upload', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Upload Tender
+                    </li>
+                    <li class="nav-item" onclick="router('proposal', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Proposal Gen
+                    </li>
+                    <li class="nav-item" onclick="router('eligibility', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path></svg>
+                        Eligibility Extractor
+                    </li>
+                    <li class="nav-item" onclick="router('checklist', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                        Checklist Builder
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-label">Analytics</div>
+                <ul>
+                    <li class="nav-item" onclick="router('emd', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        EMD Calculator
+                    </li>
+                    <li class="nav-item" onclick="router('deadline', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        Deadline Tracker
+                    </li>
+                    <li class="nav-item" onclick="router('competitor', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        Competitor Analysis
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group" style="margin-top: auto;">
+                <ul>
+                    <li class="nav-item" onclick="router('subscription', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                        Subscription
+                    </li>
+                    <li class="nav-item" onclick="router('settings', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Settings
+                    </li>
+                    <li class="nav-item" onclick="confirmLogout()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        Logout
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT WRAPPER -->
+        <main id="main-content">
+            <!-- TOP NAVBAR -->
+            <header id="topbar">
+                <div class="d-flex align-center">
+                    <div class="hamburger" onclick="toggleSidebar()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </div>
+                    <div class="search-box" id="topbar-left">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" placeholder="Search tenders, analytics..." onkeyup="filterSim(this.value)">
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <!-- Theme Toggle -->
+                    <div class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme"></div>
+                    
+                    <!-- Notifications -->
+                    <div class="notification-bell" onclick="toggleDropdown('notif-dropdown')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <div class="dot"></div>
+                        <div id="notif-dropdown" class="dropdown-menu">
+                            <div class="dropdown-item">New Tender: Railway Construction (AI Score 92%)</div>
+                            <div class="dropdown-item">Proposal due in 2 hours</div>
+                        </div>
+                    </div>
+
+                    <!-- User Profile -->
+                    <div class="user-profile" onclick="toggleDropdown('user-dropdown')">
+                        <img src="https://picsum.photos/seed/tenderAI/100/100" alt="User" class="avatar">
+                        <div class="d-flex flex-col">
+                            <span class="text-xs" style="font-weight: 600; display:block;">Alex Chen</span>
+                            <span class="badge badge-pro">ENTERPRISE</span>
+                        </div>
+                        <div id="user-dropdown" class="dropdown-menu">
+                            <div class="dropdown-item" onclick="router('settings')">Profile Settings</div>
+                            <div class="dropdown-item" onclick="router('subscription')">Billing</div>
+                            <div class="dropdown-item" onclick="confirmLogout()">Logout</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DYNAMIC SECTIONS CONTAINER -->
+            <div id="content-area">
+                
+                <!-- 1. DASHBOARD -->
+                <section id="dashboard" class="section active">
+                    <div class="d-flex justify-between align-center mb-4" style="margin-bottom: 24px;">
+                        <div>
+                            <h1 class="h1">Welcome back, Alex</h1>
+                            <p class="text-sm">Here's what's happening with your tenders today.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="router('upload')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            New Upload
+                        </button>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">AI Credits Remaining</div>
+                            <div class="stat-value" id="ai-credits">8,450</div>
+                            <div class="progress-track"><div class="progress-fill" style="width: 75%"></div></div>
+                            <div class="text-xs mt-4">Resets in 12 days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Win Rate (AI Predicted)</div>
+                            <div class="stat-value">86%</div>
+                            <div class="text-xs" style="color: green;">+4.2% from last month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active Tenders</div>
+                            <div class="stat-value">12</div>
+                            <div class="text-xs">3 Due this week</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Hours Saved</div>
+                            <div class="stat-value" id="hours-saved">142</div>
+                            <div class="text-xs">Estimated by AI</div>
+                        </div>
+                    </div>
+
+                    <h2 class="h2" style="margin-bottom: 16px;">Recent Activity</h2>
+                    <div class="stat-card" style="padding: 0; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: var(--bg-surface); border-bottom: 1px solid var(--border-color);">
+                                <tr>
+                                    <th style="padding: 16px 24px; font-weight: 600;">Tender Name</th>
+                                    <th style="padding: 16px 24px; font-weight: 600;">Status</th>
+                                    <th style="padding: 16px 24px; font-weight: 600;">AI Score</th>
+                                    <th style="padding: 16px 24px; font-weight: 600;">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 16px 24px;">Smart City Infrastructure Phase 2</td>
+                                    <td style="padding: 16px 24px;"><span class="badge" style="background: #e0e0e0;">Drafting</span></td>
+                                    <td style="padding: 16px 24px;">94/100</td>
+                                    <td style="padding: 16px 24px;" class="text-sm">Oct 24, 2023</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 16px 24px;">Federal Cloud Services Procurement</td>
+                                    <td style="padding: 16px 24px;"><span class="badge badge-pro">Submitted</span></td>
+                                    <td style="padding: 16px 24px;">88/100</td>
+                                    <td style="padding: 16px 24px;" class="text-sm">Oct 22, 2023</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 16px 24px;">AI Data Center Security Upgrade</td>
+                                    <td style="padding: 16px 24px;"><span class="badge" style="background: #e0e0e0;">Analyzing</span></td>
+                                    <td style="padding: 16px 24px;">--</td>
+                                    <td style="padding: 16px 24px;" class="text-sm">Oct 20, 2023</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 2. UPLOAD TENDER -->
+                <section id="upload" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Upload Tender</h1>
+                    
+                    <div id="drop-zone" class="upload-zone">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-muted); margin-bottom: 16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <h3 class="h3">Drag & Drop PDF Document</h3>
+                        <p class="text-sm" style="margin: 8px 0;">or click to browse files</p>
+                        <p class="text-xs">Max file size: 50MB. PDF Only.</p>
+                        <input type="file" id="file-input" hidden accept=".pdf">
+                    </div>
+
+                    <div id="file-preview-container"></div>
+
+                    <div id="action-buttons" class="action-grid" style="display: none;">
+                        <button class="btn btn-outline" onclick="simulateAI('Extracting Eligibility Criteria...', 2000)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            Extract Eligibility
+                        </button>
+                        <button class="btn btn-outline" onclick="simulateAI('Generating Executive Summary...', 2500)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            Generate Summary
+                        </button>
+                        <button class="btn btn-primary" onclick="simulateAI('Drafting Proposal Structure...', 3000)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            Generate Proposal
+                        </button>
+                        <button class="btn btn-outline" onclick="simulateAI('Analyzing Bid Feasibility...', 1500)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            Analyze Feasibility
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 3. PROPOSAL GENERATOR -->
+                <section id="proposal" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Proposal Generator</h1>
+                    <div class="d-flex gap-2" style="flex-direction: column; height: 60vh;">
+                        <textarea class="form-textarea" style="flex: 1; resize: none;" placeholder="Paste RFP requirements here or type instructions for the AI..."></textarea>
+                        <div class="d-flex justify-between align-center mt-4">
+                            <span class="text-sm">Words: 0</span>
+                            <button class="btn btn-primary" onclick="simulateGen(this, 'Generating Proposal Draft...')">
+                                Generate Proposal
+                            </button>
+                        </div>
+                    </div>
+                    <div id="proposal-output" class="mt-4" style="display: none;">
+                        <div class="stat-card">
+                            <div class="d-flex justify-between align-center mb-4">
+                                <h3 class="h3">Generated Draft</h3>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline text-xs">Copy</button>
+                                    <button class="btn btn-outline text-xs">Download PDF</button>
+                                </div>
+                            </div>
+                            <div class="skeleton" style="height: 150px; margin-bottom: 16px;"></div>
+                            <div class="skeleton" style="height: 150px; width: 80%;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. ELIGIBILITY EXTRACTOR -->
+                <section id="eligibility" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Eligibility Extractor</h1>
+                    <!-- Reusing upload zone visual for brevity, simulating existing file -->
+                    <div class="stat-card mb-4" style="margin-bottom: 24px;">
+                        <div class="d-flex justify-between align-center">
+                            <div>
+                                <h3 class="h3">Tender_Doc_v2.pdf</h3>
+                                <p class="text-sm">Scanned 2 mins ago</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="runExtraction()">Run Extraction</button>
+                        </div>
+                    </div>
+                    
+                    <div id="extraction-results" style="display: none;">
+                        <h3 class="h3" style="margin-bottom: 16px;">Key Requirements</h3>
+                        <div class="stat-card">
+                            <ul style="list-style: disc; padding-left: 20px; line-height: 2;">
+                                <li>Avg Annual Turnover: $5M+ <span class="badge badge-pro" style="margin-left: 10px;">MET</span></li>
+                                <li>Experience in 3 similar Govt projects <span class="badge badge-pro" style="margin-left: 10px;">MET</span></li>
+                                <li>ISO 27001 Certification <span class="badge" style="background: #ffcccc; color: red; margin-left: 10px;">MISSING</span></li>
+                                <li>EMD Deposit Capacity: $50k <span class="badge badge-pro" style="margin-left: 10px;">MET</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. CHECKLIST BUILDER -->
+                <section id="checklist" class="section">
+                    <div class="d-flex justify-between align-center mb-4">
+                        <h1 class="h1">Compliance Checklist</h1>
+                        <div class="text-sm">Progress: <span id="check-percent">0</span>%</div>
+                    </div>
+                    
+                    <div class="progress-track" style="margin-bottom: 24px; height: 12px;"><div class="progress-fill" id="check-bar" style="width: 0%"></div></div>
+
+                    <div class="stat-card">
+                        <div id="checklist-container">
+                            <!-- JS will populate -->
+                        </div>
+                        <button class="btn btn-outline w-full mt-4" onclick="addItem()">+ Add Custom Item</button>
+                    </div>
+                </section>
+
+                <!-- 6. EMD CALCULATOR -->
+                <section id="emd" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">EMD Calculator</h1>
+                    <div class="stat-card" style="max-width: 500px;">
+                        <div class="form-group">
+                            <label class="form-label">Tender Value ($)</label>
+                            <input type="number" id="tender-val" class="form-input" placeholder="e.g. 1000000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">EMD Percentage (%)</label>
+                            <input type="number" id="emd-perc" class="form-input" placeholder="e.g. 2">
+                        </div>
+                        <button class="btn btn-primary w-full" onclick="calcEMD()">Calculate</button>
+                        
+                        <div id="emd-result" class="mt-4" style="display: none; text-align: center;">
+                            <div class="text-sm">Required EMD Amount</div>
+                            <div class="h1" style="color: var(--text-main); margin: 10px 0;">$<span id="emd-val">0</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. DEADLINE TRACKER -->
+                <section id="deadline" class="section">
+                    <div class="d-flex justify-between align-center mb-4">
+                        <h1 class="h1">Deadline Tracker</h1>
+                        <button class="btn btn-primary" onclick="openModal('deadline-modal')">+ Add Deadline</button>
+                    </div>
+                    <div class="dashboard-grid" id="deadline-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+                
+                <!-- 8. COMPETITOR ANALYSIS -->
+                <section id="competitor" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Competitor Intelligence</h1>
+                    <div class="d-flex gap-2 mb-4">
+                        <input type="text" id="comp-name" class="form-input" placeholder="Enter Competitor Name">
+                        <button class="btn btn-primary" onclick="analyzeComp()">Analyze</button>
+                    </div>
+                    
+                    <div id="comp-results" class="dashboard-grid" style="display: none;">
+                        <div class="stat-card">
+                            <div class="stat-label">Win Rate</div>
+                            <div class="stat-value">42%</div>
+                            <div class="progress-track"><div class="progress-fill" style="width: 42%"></div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg Bid Amount</div>
+                            <div class="stat-value">$1.2M</div>
+                            <div class="text-xs">Aggressive Pricing</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Tech Index</div>
+                            <div class="stat-value">8.5/10</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 9. SUBSCRIPTION -->
+                <section id="subscription" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Subscription</h1>
+                    <div class="stat-card d-flex justify-between align-center" style="border: 1px solid var(--text-main);">
+                        <div>
+                            <h2 class="h2">Enterprise Plan</h2>
+                            <p class="text-sm">Billed Monthly • $499/mo</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="h1" style="margin: 0;">Active</div>
+                            <button class="btn btn-outline mt-4">Manage Plan</button>
+                        </div>
+                    </div>
+                    <h3 class="h3 mt-4">Billing History</h3>
+                    <table class="w-full mt-4" style="width: 100%; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 12px 0;">Oct 01, 2023</td>
+                            <td style="padding: 12px 0;">Enterprise Plan</td>
+                            <td style="padding: 12px 0; text-align: right;">$499.00</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 0;">Sep 01, 2023</td>
+                            <td style="padding: 12px 0;">Enterprise Plan</td>
+                            <td style="padding: 12px 0; text-align: right;">$499.00</td>
+                        </tr>
+                    </table>
+                </section>
+
+                <!-- 10. SETTINGS -->
+                <section id="settings" class="section">
+                    <h1 class="h1" style="margin-bottom: 24px;">Settings</h1>
+                    <div class="stat-card" style="max-width: 600px;">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" value="Alex Chen">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" value="alex.chen@enterprise.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-input" value="password123">
+                        </div>
+                        <div class="d-flex justify-between align-center mt-4" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                            <div>
+                                <h3 class="h3">Dark Mode</h3>
+                                <p class="text-sm">Toggle interface theme</p>
+                            </div>
+                            <div class="theme-toggle" onclick="toggleTheme()"></div>
+                        </div>
+                        <button class="btn btn-primary mt-4" onclick="showToast('Settings Saved Successfully', 'success')">Save Changes</button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- RIGHT INSIGHTS PANEL -->
+        <aside id="insights-panel">
+            <h3 class="h3 mb-4" style="margin-bottom: 24px;">Insights</h3>
+            
+            <div class="insight-card">
+                <div class="text-xs text-muted">STREAK</div>
+                <div class="d-flex align-center gap-2 mt-4">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="orange" stroke="orange" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span style="font-weight: 700;">12 Days</span>
+                </div>
+                <p class="text-xs mt-4">Consecutive daily uploads. Keep it up!</p>
+            </div>
+
+            <div class="insight-card">
+                <div class="text-xs text-muted">CREDIT USAGE</div>
+                <div class="mt-4" style="height: 100px; display: flex; align-items: flex-end; gap: 4px;">
+                    <div style="flex:1; background: var(--border-color); height: 40%;"></div>
+                    <div style="flex:1; background: var(--border-color); height: 60%;"></div>
+                    <div style="flex:1; background: var(--border-color); height: 30%;"></div>
+                    <div style="flex:1; background: var(--text-main); height: 80%;"></div>
+                    <div style="flex:1; background: var(--border-color); height: 50%;"></div>
+                </div>
+                <p class="text-xs mt-4">Highest usage this week on Tuesday.</p>
+            </div>
+        </aside>
+
+        <!-- MOBILE FAB -->
+        <div id="mobile-fab" onclick="router('upload')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
+
+    </div>
+
+    <!-- MODALS & TOASTS -->
+    <div id="modal-overlay">
+        <!-- Deadline Modal -->
+        <div class="modal" id="deadline-modal-content">
+            <h2 class="h2" style="margin-bottom: 16px;">Add Deadline</h2>
+            <div class="form-group">
+                <label class="form-label">Tender Title</label>
+                <input type="text" class="form-input" id="dl-title">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date & Time</label>
+                <input type="datetime-local" class="form-input" id="dl-date">
+            </div>
+            <div class="d-flex justify-between mt-4">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="addDeadline()">Save</button>
+            </div>
+        </div>
+        
+        <!-- Logout Modal -->
+        <div class="modal" id="logout-modal-content" style="text-align: center;">
+            <h2 class="h2" style="margin-bottom: 16px;">Logout?</h2>
+            <p class="text-sm" style="margin-bottom: 24px;">Are you sure you want to end your session?</p>
+            <div class="d-flex justify-between">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="performLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // ============================================
+        // STATE & THEME
+        // ============================================
+        const state = {
+            theme: localStorage.getItem('theme') || 'light',
+            files: [],
+            checklist: [
+                { id: 1, text: 'Company Profile Document', checked: true },
+                { id: 2, text: 'Audited Financial Statements (FY22-23)', checked: false },
+                { id: 3, text: 'Technical Capability Proof', checked: false },
+                { id: 4, text: 'Experience Certificates', checked: true }
+            ],
+            deadlines: [
+                { id: 1, title: 'Road Construction Phase 1', date: '2023-11-15T14:00' },
+                { id: 2, title: 'IT Infrastructure Upgrade', date: '2023-10-30T09:00' }
+            ]
+        };
+
+        function init() {
+            if (state.theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            }
+            animateCounters();
+            renderChecklist();
+            renderDeadlines();
+            setupDragDrop();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+            state.theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', state.theme);
+        }
+
+        // ============================================
+        // ROUTING & NAV
+        // ============================================
+        function router(sectionId, navEl) {
+            // Update Active State on Nav
+            if(navEl) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                navEl.classList.add('active');
+            }
+
+            // Hide/Show Sections
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(sectionId);
+            if (target) target.classList.add('active');
+
+            // Mobile Sidebar Close
+            if (window.innerWidth < 900) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+                document.getElementById('app').classList.remove('sidebar-open');
+            }
+            
+            // Close Dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            if (window.innerWidth < 600) {
+                sb.classList.toggle('mobile-open');
+            } else {
+                const app = document.getElementById('app');
+                app.classList.toggle('sidebar-open');
+            }
+        }
+
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            const wasOpen = el.classList.contains('show');
+            document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+            if (!wasOpen) el.classList.add('show');
+        }
+
+        // Close dropdowns on outside click
+        window.onclick = function(event) {
+            if (!event.target.matches('.notification-bell') && !event.target.matches('.user-profile') && !event.target.closest('.notification-bell') && !event.target.closest('.user-profile')) {
+                document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.remove('show'));
+            }
+        }
+
+        // ============================================
+        // DRAG & DROP UPLOAD
+        // ============================================
+        function setupDragDrop() {
+            const zone = document.getElementById('drop-zone');
+            const input = document.getElementById('file-input');
+
+            zone.onclick = () => input.click();
+
+            input.onchange = (e) => handleFiles(e.target.files);
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                zone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                zone.addEventListener(eventName, () => zone.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                zone.addEventListener(eventName, () => zone.classList.remove('drag-over'), false);
+            });
+
+            zone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files), false);
+        }
+
+        function handleFiles(files) {
+            if(files.length > 0) {
+                const file = files[0];
+                if (file.type !== 'application/pdf') {
+                    showToast('Only PDF files are allowed', 'error');
+                    return;
+                }
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('File size exceeds 50MB', 'error');
+                    return;
+                }
+                
+                state.files.push(file);
+                renderFilePreview(file);
+                document.getElementById('action-buttons').style.display = 'grid';
+                showToast('File uploaded successfully', 'success');
+            }
+        }
+
+        function renderFilePreview(file) {
+            const container = document.getElementById('file-preview-container');
+            const div = document.createElement('div');
+            div.className = 'file-card';
+            div.innerHTML = `
+                <div class="d-flex align-center gap-2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <div>
+                        <div class="h3">${file.name}</div>
+                        <div class="text-xs text-muted">${(file.size/1024/1024).toFixed(2)} MB</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline text-xs" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // ============================================
+        // SIMULATIONS
+        // ============================================
+        function simulateAI(msg, duration) {
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Processing...`;
+            
+            // Add CSS for spin
+            if(!document.getElementById('spin-style')) {
+                const s = document.createElement('style');
+                s.id = 'spin-style';
+                s.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }`;
+                document.head.appendChild(s);
+            }
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                showToast(msg + ' Complete!', 'success');
+            }, duration);
+        }
+
+        function simulateGen(btn, msg) {
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Generating...";
+            
+            document.getElementById('proposal-output').style.display = 'block';
+            
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                showToast('Proposal Generated!', 'success');
+                // Replace skeleton with text
+                document.getElementById('proposal-output').innerHTML = `
+                    <div class="stat-card">
+                        <div class="d-flex justify-between align-center mb-4">
+                            <h3 class="h3">Generated Draft</h3>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline text-xs" onclick="showToast('Copied to clipboard', 'success')">Copy</button>
+                                <button class="btn btn-outline text-xs" onclick="showToast('Downloading PDF...', 'success')">Download PDF</button>
+                            </div>
+                        </div>
+                        <p style="line-height: 1.8;">
+                            <strong>Executive Summary:</strong><br>
+                            We propose a comprehensive solution leveraging AI-driven analytics to optimize the tender process. Our approach ensures 99.9% compliance with the stated requirements...
+                        </p>
+                    </div>
+                `;
+            }, 2500);
+        }
+
+        function runExtraction() {
+            const btn = event.target;
+            btn.innerText = "Analyzing...";
+            setTimeout(() => {
+                document.getElementById('extraction-results').style.display = 'block';
+                btn.innerText = "Run Extraction";
+                showToast('Extraction Complete', 'success');
+            }, 1500);
+        }
+
+        // ============================================
+        // CHECKLIST
+        // ============================================
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            let checkedCount = 0;
+
+            state.checklist.forEach((item, index) => {
+                if(item.checked) checkedCount++;
+                const div = document.createElement('div');
+                div.className = 'checklist-item';
+                div.innerHTML = `
+                    <div class="custom-check ${item.checked ? 'checked' : ''}" onclick="toggleCheck(${index})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <span style="${item.checked ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${item.text}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            const percent = Math.round((checkedCount / state.checklist.length) * 100);
+            document.getElementById('check-percent').innerText = percent;
+            document.getElementById('check-bar').style.width = percent + '%';
+        }
+
+        function toggleCheck(index) {
+            state.checklist[index].checked = !state.checklist[index].checked;
+            renderChecklist();
+        }
+
+        function addItem() {
+            const text = prompt("Enter checklist item:");
+            if(text) {
+                state.checklist.push({ id: Date.now(), text: text, checked: false });
+                renderChecklist();
+            }
+        }
+
+        // ============================================
+        // CALCULATORS & ANALYTICS
+        // ============================================
+        function calcEMD() {
+            const val = parseFloat(document.getElementById('tender-val').value);
+            const perc = parseFloat(document.getElementById('emd-perc').value);
+            
+            if(!val || !perc) {
+                showToast('Please enter valid numbers', 'error');
+                return;
+            }
+
+            const res = (val * perc) / 100;
+            document.getElementById('emd-val').innerText = res.toLocaleString();
+            document.getElementById('emd-result').style.display = 'block';
+        }
+
+        function analyzeComp() {
+            const name = document.getElementById('comp-name').value;
+            if(!name) return showToast('Enter a name', 'error');
+            
+            showToast('Analyzing Competitor Database...', 'success');
+            document.getElementById('comp-results').style.display = 'grid';
+        }
+
+        // ============================================
+        // DEADLINES
+        // ============================================
+        function renderDeadlines() {
+            const grid = document.getElementById('deadline-grid');
+            grid.innerHTML = '';
+            state.deadlines.forEach(dl => {
+                const date = new Date(dl.date);
+                const isUrgent = (date - new Date()) < (48 * 60 * 60 * 1000); // 48 hours
+                
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.style.borderLeft = isUrgent ? '4px solid red' : '4px solid green';
+                card.innerHTML = `
+                    <h3 class="h3">${dl.title}</h3>
+                    <div class="text-sm mt-4">Due: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    <div class="badge mt-4" style="background:${isUrgent ? '#ffebee' : '#e8f5e9'}; color:${isUrgent ? 'red' : 'green'}">
+                        ${isUrgent ? 'Urgent' : 'On Track'}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function addDeadline() {
+            const title = document.getElementById('dl-title').value;
+            const date = document.getElementById('dl-date').value;
+            
+            if(!title || !date) return showToast('Fill all fields', 'error');
+            
+            state.deadlines.push({ id: Date.now(), title, date });
+            renderDeadlines();
+            closeModal();
+            showToast('Deadline Added', 'success');
+        }
+
+        // ============================================
+        // MODALS & TOASTS
+        // ============================================
+        function openModal(type) {
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.getElementById('modal-overlay').classList.add('open');
+            if(type === 'deadline-modal') document.getElementById('deadline-modal-content').style.display = 'block';
+            if(type === 'logout-modal') document.getElementById('logout-modal-content').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('open');
+            setTimeout(() => {
+                document.getElementById('modal-overlay').style.display = 'none';
+                document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            }, 200);
+        }
+
+        function confirmLogout() { openModal('logout-modal'); }
+        function performLogout() {
+            document.body.style.opacity = '0';
+            showToast('Logging out...', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        function showToast(msg, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Search Filter Simulation
+        function filterSim(val) {
+            // In a real app, this would filter data. 
+            // Here we just simulate finding things if user types "road" or "it"
+            if(val.length > 2) {
+                console.log("Filtering for:", val);
+            }
+        }
+
+        // Animated Counters
+        function animateCounters() {
+            const counters = [
+                { id: 'ai-credits', end: 8450 },
+                { id: 'hours-saved', end: 142 }
+            ];
+            
+            counters.forEach(c => {
+                const el = document.getElementById(c.id);
+                if(!el) return;
+                let start = 0;
+                const duration = 2000;
+                const stepTime = Math.abs(Math.floor(duration / (c.end / 100))); 
+                
+                const timer = setInterval(() => {
+                    start += 100;
+                    el.innerText = start.toLocaleString();
+                    if (start >= c.end) clearInterval(timer);
+                }, stepTime);
+            });
+        }
+
+        // Initialize App
+        init();
+
+    </script>
+</body>
+</html>
